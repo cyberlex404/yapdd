@@ -1,0 +1,6 @@
+name = Yandex mail for domain (Yandex.PDD)
+description = Yandex mail for domain (Yandex.PDD)
+core = 7.x
+
+files[] = yapdd.api.inc
+;files[] = yapdd.mail.inc
