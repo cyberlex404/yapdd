@@ -3,3 +3,33 @@
 * @file
 * A description of what your module does.
 */
+
+/**
+ * Implements hook_permission().
+ */
+function yapdd_permission() {
+  return array(
+    'administer yandex pdd config' => array(
+      'title' => t('Administer Yandex PDD config'),
+      'description' => t('Administer Yandex PDD config: set PDD Token & domain'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function yapdd_menu() {
+  // http://dev2.drupal7.lex/admin/config/services/rss-publishing
+
+  $items['admin/config/services/yapdd'] = array(
+    'title' => 'Yandex PDD',
+    'description' => 'Yandex PDD',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('yapdd_domain_config'),
+    'access arguments' => array('administer yandex pdd config'),
+    'file' => 'yapdd.admin.inc',
+  );
+  return $items;
+
+}
