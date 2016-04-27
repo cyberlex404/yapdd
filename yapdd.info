@@ -3,4 +3,4 @@ description = Yandex mail for domain (Yandex.PDD)
 core = 7.x
 
 files[] = yapdd.api.inc
-;files[] = yapdd.mail.inc
+files[] = yapdd.admin.inc
