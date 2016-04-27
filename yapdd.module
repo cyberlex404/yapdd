@@ -55,15 +55,15 @@ function yapdd_get_string($key) {
 
   if (!isset($static)) {
     $static = variable_get('yapdd_strings', array()) + array(
-        'entity label' => t('White label entity'),
-        'entity plural label' => t('White label entities'),
-        'entity description' => 'While label entities are white, but they can be customized.',
-        'type label' => t('White label type'),
-        'type plural label' => t('White label types'),
-        'type description' => 'Types of white label entities.',
+        'entity label' => t('Yandex PDD label email'),
+        'entity plural label' => t('Yandex PDD label emails'),
+        'entity description' => 'Yandex PDD label emails are yapdd, but they can be customized.',
+        'type label' => t('Yandex PDD domains'),
+        'type plural label' => t('Yandex PDD label domains'),
+        'type description' => 'Domains Yandex PDD',
         'base path' => 'yapdd',
         'admin menu path' => 'admin/structure/yapdd',
-        'admin menu description' => 'Manage white label types, including fields.',
+        'admin menu description' => 'Manage yapdd label types, including fields.',
         'admin menu path content' => 'admin/content/yapdd',
       );
   }
@@ -79,9 +79,9 @@ function yapdd_entity_info() {
       'label' => yapdd_get_string('entity label'),
       'plural label' => yapdd_get_string('entity plural label'),
       'description' => yapdd_get_string('entity description'),
-      'entity class' => 'WhileEntity',
-      'controller class' => 'WhileController',
-      'base table' => 'yapdd_base',
+      'entity class' => 'YapddEntity',
+      'controller class' => 'YapddController',
+      'base table' => 'yapdd_email',
       'revision table' => 'yapdd_revision',
       'fieldable' => TRUE,
       'view modes' => array(
@@ -95,25 +95,26 @@ function yapdd_entity_info() {
         'revision' => 'revision_id',
         'bundle' => 'type',
         'label' => 'label',
+        'login' => 'login',
       ),
       'bundles' => array(),
       'label callback' => 'entity_class_label',
       'uri callback' => 'entity_class_uri',
       'access callback' => 'yapdd_access',
       'module' => 'yapdd',
-      'metadata controller class' => 'WhileMetadataController',
+      'metadata controller class' => 'YapddMetadataController',
       // Enable the entity API's admin UI.
       'admin ui' => array(
         'path' => yapdd_get_string('base path'),
         'file' => 'yapdd.pages.inc',
-        'controller class' => 'WhileUIController',
+        'controller class' => 'YapddUIController',
       ),
     ),
   );
 
   // Add bundle info but bypass entity_load() as we cannot use it here.
-  $types = db_select('yapdd_type', 't')
-    ->fields('t')
+  $types = db_select('yapdd_domain', 'd')
+    ->fields('d')
     ->execute()
     ->fetchAllAssoc('name');
 
@@ -121,7 +122,7 @@ function yapdd_entity_info() {
     $return['yapdd']['bundles'][$type_name] = array(
       'label' => $info->label,
       'admin' => array(
-        'path' => yapdd_get_string('admin menu path') . '/manage/%yapdd_type',
+        'path' => yapdd_get_string('admin menu path') . '/manage/%yapdd_domain',
         'real path' => yapdd_get_string('admin menu path') . '/manage/' . $type_name,
         'bundle argument' => 4,
         'access arguments' => array('administer yapdd types'),
@@ -135,13 +136,13 @@ function yapdd_entity_info() {
     $return['yapdd']['entity cache'] = TRUE;
   }
 
-  $return['yapdd_type'] = array(
+  $return['yapdd_domain'] = array(
     'label' => yapdd_get_string('type label'),
     'plural label' => yapdd_get_string('type plural label'),
     'description' => yapdd_get_string('type description'),
-    'entity class' => 'WhileType',
+    'entity class' => 'YapddDomain',
     'controller class' => 'EntityAPIControllerExportable',
-    'base table' => 'yapdd_type',
+    'base table' => 'yapdd_domain',
     'fieldable' => FALSE,
     'bundle of' => 'yapdd',
     'exportable' => TRUE,
@@ -149,14 +150,16 @@ function yapdd_entity_info() {
       'id' => 'id',
       'name' => 'name',
       'label' => 'label',
+      'domain' => 'domain',
+      'token' => 'token',
     ),
-    'access callback' => 'yapdd_type_access',
+    'access callback' => 'yapdd_domain_access',
     'module' => 'yapdd',
     // Enable the entity API's admin UI.
     'admin ui' => array(
       'path' => yapdd_get_string('admin menu path'),
       'file' => 'yapdd.admin.inc',
-      'controller class' => 'yapddTypeUIController',
+      'controller class' => 'YapddDomainUIController',
     ),
   );
   // Define how to get the bundle-name from a yapdd type object.
@@ -186,7 +189,7 @@ function yapdd_access($op, $entity = NULL, $account = NULL) {
 /**
  * Access callback for the entity API.
  */
-function yapdd_type_access($op, $entity = NULL, $account = NULL) {
+function yapdd_domain_access($op, $entity = NULL, $account = NULL) {
   return user_access('administer yapdd types', $account);
 }
 
@@ -195,8 +198,8 @@ function yapdd_type_access($op, $entity = NULL, $account = NULL) {
  *
  * @return yapddType
  */
-function yapdd_type_load($type_name) {
-  return entity_load_single('yapdd_type', $type_name);
+function yapdd_domain_load($type_name) {
+  return entity_load_single('yapdd_domain', $type_name);
 }
 
 /**

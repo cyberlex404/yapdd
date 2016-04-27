@@ -9,7 +9,7 @@
  * Implements hook_schema().
  */
 function yapdd_schema() {
-  $schema['yapdd_base'] = array(
+  $schema['yapdd_email'] = array(
     'description' => 'Stores yapdd items.',
     'fields' => array(
       'id' => array(
@@ -25,7 +25,7 @@ function yapdd_schema() {
         'unsigned' => TRUE,
       ),
       'type' => array(
-        'description' => 'The {yapdd_type}.type of this yapdd.',
+        'description' => 'The {yapdd_domain}.type of this yapdd.',
         'type' => 'varchar',
         'length' => 32,
         'not null' => TRUE,
@@ -33,6 +33,13 @@ function yapdd_schema() {
       ),
       'label' => array(
         'description' => 'The label of the yapdd.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'login' => array(
+        'description' => 'The login of the domain.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -77,7 +84,7 @@ function yapdd_schema() {
     ),
     'foreign keys' => array(
       'type' => array(
-        'table' => 'yapdd_type',
+        'table' => 'yapdd_domain',
         'columns' => array('type' => 'type'),
       ),
       'owner' => array(
@@ -107,6 +114,13 @@ function yapdd_schema() {
       ),
       'label' => array(
         'description' => 'The label of the yapdd.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'login' => array(
+        'description' => 'The login of the domain.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -150,22 +164,22 @@ function yapdd_schema() {
     ),
     'foreign keys' => array(
       'type' => array(
-        'table' => 'yapdd_type',
+        'table' => 'yapdd_domain',
         'columns' => array('type' => 'type'),
       ),
       'owner' => array(
         'table' => 'users',
         'columns' => array('uid' => 'uid'),
       ),
-      'yapdd_base' => array(
-        'table' => 'yapdd_base',
+      'yapdd_email' => array(
+        'table' => 'yapdd_email',
         'columns' => array('id' => 'id'),
       ),
     ),
     'primary key' => array('revision_id'),
   );
-
-  $schema['yapdd_type'] = array(
+// yapdd_type - yapdd_domain
+  $schema['yapdd_domain'] = array(
     'description' => 'Stores information about all defined yapdd types.',
     'fields' => array(
       'id' => array(
@@ -181,6 +195,20 @@ function yapdd_schema() {
       ),
       'label' => array(
         'description' => 'The human-readable name of this yapdd type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'domain' => array(
+        'description' => 'The domain name of this yapdd type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'token' => array(
+        'description' => 'The Yandex.PDD domain access Token.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,

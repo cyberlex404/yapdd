@@ -37,6 +37,8 @@ function yapdd_form($form, &$form_state, Entity $yapdd, $op = 'edit') {
 
   // Needed by entity_form_field_validate().
   $form['type'] = array('#type' => 'value', '#value' => $yapdd->type);
+  //dpm($yapdd->type(), '40 type()');
+  $yapdd_domain = $yapdd->type();
 
   $form['label'] = array(
     '#type' => 'textfield',
@@ -47,6 +49,16 @@ function yapdd_form($form, &$form_state, Entity $yapdd, $op = 'edit') {
     '#weight' => -15,
   );
 
+  $form['login'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Login'),
+    '#default_value' => isset($yapdd->login) ? $yapdd->login : '',
+    '#description' => t('The login associated with the @yapdd.', array('@yapdd' => yapdd_get_string('entity label'))),
+    '#required' => TRUE,
+    '#weight' => -16,
+    '#field_suffix' => '@' . $yapdd_domain->domain,
+  );
+/*
   $form['created'] = array(
     '#type' => 'textfield',
     '#title' => t('Creation date'),
@@ -62,7 +74,7 @@ function yapdd_form($form, &$form_state, Entity $yapdd, $op = 'edit') {
     '#default_value' => !empty($yapdd->status),
     '#weight' => -10,
   );
-
+*/
   $form['options']['#tree'] = TRUE;
   if ($yapdd->type()->data['supports_revisions'] && empty($yapdd->is_new)) {
     $form['options']['create_revision'] = array('#type' => 'checkbox',
@@ -104,9 +116,9 @@ function yapdd_form_validate(&$form, &$form_state) {
  * Form API submit callback for the yapdd form.
  */
 function yapdd_form_submit(&$form, &$form_state) {
-  $date_format = variable_get('date_format_short', 'm/d/Y - H:i');
-  $date = date_parse_from_format($date_format, $form_state['values']['created']);
-  $form_state['values']['created'] = mktime($date['hour'], $date['minute'], $date['second'], $date['month'], $date['day'], $date['year']);
+ // $date_format = variable_get('date_format_short', 'm/d/Y - H:i');
+ // $date = date_parse_from_format($date_format, $form_state['values']['created']);
+ // $form_state['values']['created'] = mktime($date['hour'], $date['minute'], $date['second'], $date['month'], $date['day'], $date['year']);
   $yapdd = entity_ui_form_submit_build_entity($form, $form_state);
   // Save and go back.
   $yapdd->save();

@@ -15,7 +15,7 @@ class YapddMetadataController extends EntityDefaultMetadataController {
     $properties = &$info[$this->type]['properties'];
 
     $properties['type'] = array(
-      'type' => 'yapdd_type',
+      'type' => 'yapdd_domain',
       'setter callback' => 'entity_property_verbatim_set',
       'setter permission' => 'administer yapdds',
       'required' => TRUE,

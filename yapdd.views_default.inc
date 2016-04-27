@@ -14,8 +14,8 @@ function yapdd_views_default_views() {
   $view->name = 'yapdds';
   $view->description = '';
   $view->tag = 'default';
-  $view->base_table = 'yapdd_base';
-  $view->human_name = 'White label entity types';
+  $view->base_table = 'yapdd_email';
+  $view->human_name = 'Yapdd label entity types';
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
@@ -93,41 +93,41 @@ function yapdd_views_default_views() {
       'empty_column' => 0,
     ),
   );
-  /* Field: White label entity: White label entity ID */
+  /* Field: Yapdd label entity: Yapdd label entity ID */
   $handler->display->display_options['fields']['id']['id'] = 'id';
-  $handler->display->display_options['fields']['id']['table'] = 'yapdd_base';
+  $handler->display->display_options['fields']['id']['table'] = 'yapdd_email';
   $handler->display->display_options['fields']['id']['field'] = 'id';
   $handler->display->display_options['fields']['id']['label'] = 'ID';
-  /* Field: White label entity: Type */
+  /* Field: Yapdd label entity: Type */
   $handler->display->display_options['fields']['type']['id'] = 'type';
-  $handler->display->display_options['fields']['type']['table'] = 'yapdd_base';
+  $handler->display->display_options['fields']['type']['table'] = 'yapdd_email';
   $handler->display->display_options['fields']['type']['field'] = 'type';
-  /* Field: White label entity: URL */
+  /* Field: Yapdd label entity: URL */
   $handler->display->display_options['fields']['url']['id'] = 'url';
   $handler->display->display_options['fields']['url']['table'] = 'views_entity_yapdd';
   $handler->display->display_options['fields']['url']['field'] = 'url';
   $handler->display->display_options['fields']['url']['exclude'] = TRUE;
   $handler->display->display_options['fields']['url']['link_to_entity'] = 0;
-  /* Field: White label entity: Label */
+  /* Field: Yapdd label entity: Label */
   $handler->display->display_options['fields']['label_1']['id'] = 'label_1';
-  $handler->display->display_options['fields']['label_1']['table'] = 'yapdd_base';
+  $handler->display->display_options['fields']['label_1']['table'] = 'yapdd_email';
   $handler->display->display_options['fields']['label_1']['field'] = 'label';
   $handler->display->display_options['fields']['label_1']['alter']['make_link'] = TRUE;
   $handler->display->display_options['fields']['label_1']['alter']['path'] = '[url]';
-  /* Field: White label entity: Date created */
+  /* Field: Yapdd label entity: Date created */
   $handler->display->display_options['fields']['created']['id'] = 'created';
-  $handler->display->display_options['fields']['created']['table'] = 'yapdd_base';
+  $handler->display->display_options['fields']['created']['table'] = 'yapdd_email';
   $handler->display->display_options['fields']['created']['field'] = 'created';
   $handler->display->display_options['fields']['created']['date_format'] = 'short';
-  /* Field: White label entity: Status */
+  /* Field: Yapdd label entity: Status */
   $handler->display->display_options['fields']['status']['id'] = 'status';
-  $handler->display->display_options['fields']['status']['table'] = 'yapdd_base';
+  $handler->display->display_options['fields']['status']['table'] = 'yapdd_email';
   $handler->display->display_options['fields']['status']['field'] = 'status';
   $handler->display->display_options['fields']['status']['label'] = 'Is valid';
   $handler->display->display_options['fields']['status']['not'] = 0;
-  /* Field: White label entity: White label entity ID */
+  /* Field: Yapdd label entity: Yapdd label entity ID */
   $handler->display->display_options['fields']['id_1']['id'] = 'id_1';
-  $handler->display->display_options['fields']['id_1']['table'] = 'yapdd_base';
+  $handler->display->display_options['fields']['id_1']['table'] = 'yapdd_email';
   $handler->display->display_options['fields']['id_1']['field'] = 'id';
   $handler->display->display_options['fields']['id_1']['label'] = 'Operations';
   $handler->display->display_options['fields']['id_1']['alter']['alter_text'] = TRUE;
@@ -136,7 +136,7 @@ function yapdd_views_default_views() {
   $handler->display->display_options['fields']['id_1']['alter']['path'] = yapdd_get_string('base path') . '/[id]/edit';
   /* Field: yapdd: yapdd ID */
   $handler->display->display_options['fields']['id_2']['id'] = 'id_2';
-  $handler->display->display_options['fields']['id_2']['table'] = 'yapdd_base';
+  $handler->display->display_options['fields']['id_2']['table'] = 'yapdd_email';
   $handler->display->display_options['fields']['id_2']['field'] = 'id';
   $handler->display->display_options['fields']['id_2']['label'] = 'Delete';
   $handler->display->display_options['fields']['id_2']['alter']['alter_text'] = TRUE;
@@ -144,9 +144,9 @@ function yapdd_views_default_views() {
   $handler->display->display_options['fields']['id_2']['alter']['make_link'] = TRUE;
   $handler->display->display_options['fields']['id_2']['alter']['path'] = yapdd_get_string('base path') . '/[id]/delete';
   $handler->display->display_options['fields']['id_2']['element_label_colon'] = FALSE;
-  /* Filter criterion: White label entity: Type */
+  /* Filter criterion: Yapdd label entity: Type */
   $handler->display->display_options['filters']['type']['id'] = 'type';
-  $handler->display->display_options['filters']['type']['table'] = 'yapdd_base';
+  $handler->display->display_options['filters']['type']['table'] = 'yapdd_email';
   $handler->display->display_options['filters']['type']['field'] = 'type';
   $handler->display->display_options['filters']['type']['exposed'] = TRUE;
   $handler->display->display_options['filters']['type']['expose']['operator_id'] = 'type_op';

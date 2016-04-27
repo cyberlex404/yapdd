@@ -33,6 +33,7 @@ class YapddEntity extends Entity {
   public $id;
   public $type;
   public $label = '';
+  public $login = '';
   public $status = 1;
 
   public function __construct($values = array()) {
@@ -51,9 +52,10 @@ class YapddEntity extends Entity {
     if (empty($this->created) && (!empty($this->is_new) || !$this->id)) {
       $this->created = REQUEST_TIME;
     }
+    //$this->login = 'new new new';
 
-    $yapdd_type = $this->type();
-    if ($yapdd_type->supportsRevisions()) {
+    $yapdd_domain = $this->type();
+    if ($yapdd_domain->supportsRevisions()) {
       $this->is_new_revision = isset($this->options) && !empty($this->options['create_revision']);
     }
     $this->changed = REQUEST_TIME;
@@ -67,7 +69,7 @@ class YapddEntity extends Entity {
    * @return YapddType
    */
   public function type() {
-    return yapdd_type_load($this->type);
+    return yapdd_domain_load($this->type);
   }
 
   /**
@@ -87,6 +89,8 @@ class YapddEntity extends Entity {
 class YapddDomain extends Entity {
 
   public $label = '';
+  public $domain = '';
+  public $token = '';
   public $weight = 0;
 
   /**

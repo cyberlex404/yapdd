@@ -16,11 +16,11 @@ class PanelizerEntityYapdd extends PanelizerEntityDefault {
   public $supports_revisions = TRUE;
   public $entity_admin_root;
   public $entity_admin_bundle = 4;
-  public $views_table = 'yapdd_base';
+  public $views_table = 'yapdd_email';
   public $uses_page_manager = TRUE;
 
   function __construct() {
-    $this->entity_admin_root = yapdd_get_string('admin menu path') . '/manage/%panelizer_yapdd_type';
+    $this->entity_admin_root = yapdd_get_string('admin menu path') . '/manage/%panelizer_yapdd_domain';
   }
 
   public function entity_access($op, $entity) {
@@ -119,10 +119,10 @@ class PanelizerEntityYapdd extends PanelizerEntityDefault {
    */
   public function hook_form_alter(&$form, &$form_state, $form_id) {
     // todo works?
-    if ($form_id == 'yapdd_type_form') {
-      if (isset($form['#yapdd_type'])) {
+    if ($form_id == 'yapdd_domain_form') {
+      if (isset($form['#yapdd_domain'])) {
         // todo form state yapdd type
-        $bundle = $form['#yapdd_type']->type;
+        $bundle = $form['#yapdd_domain']->type;
         $this->add_bundle_setting_form($form, $form_state, $bundle, array('type'));
       }
     }
