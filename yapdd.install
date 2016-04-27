@@ -1,0 +1,225 @@
+<?php
+
+/**
+ * @file
+ * while module install file.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function yapdd_schema() {
+  $schema['yapdd_base'] = array(
+    'description' => 'Stores yapdd items.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique yapdd item ID.',
+      ),
+      'revision_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Revision ID.',
+        'default' => 0,
+        'unsigned' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'The {yapdd_type}.type of this yapdd.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'The label of the yapdd.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'langcode' => array(
+        'description' => 'The {language}.langcode of the yapdd.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that owns this node; initially, this is the user that created it.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the yapdd was created.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the yapdd was changed.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'status' => array(
+        'description' => 'Whether the yapdd is active (1) or not (0).',
+        'type' => 'int',
+        'default' => 0,
+        'size' => 'tiny',
+        'not null' => FALSE,
+      ),
+    ),
+    'indexes' => array(
+      'type' => array('type'),
+      'changed' => array('changed'),
+      'created' => array('created'),
+      'uid' => array('uid'),
+    ),
+    'foreign keys' => array(
+      'type' => array(
+        'table' => 'yapdd_type',
+        'columns' => array('type' => 'type'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+      'yapdd_revision' => array(
+        'table' => 'yapdd_revision',
+        'columns' => array('revision_id' => 'revision_id'),
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['yapdd_revision'] = array(
+    'description' => 'Stores yapdd item revisions.',
+    'fields' => array(
+      'revision_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique revision ID.',
+      ),
+      'id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'While item ID.',
+      ),
+      'label' => array(
+        'description' => 'The label of the yapdd.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'langcode' => array(
+        'description' => 'The {language}.langcode of the yapdd.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that owns this node; initially, this is the user that created it.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the yapdd was created.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the yapdd was changed.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'status' => array(
+        'description' => 'Whether the yapdd is active (1) or not (0).',
+        'type' => 'int',
+        'default' => 0,
+        'size' => 'tiny',
+        'not null' => FALSE,
+      ),
+    ),
+    'indexes' => array(
+      'changed' => array('changed'),
+      'created' => array('created'),
+      'uid' => array('uid'),
+    ),
+    'foreign keys' => array(
+      'type' => array(
+        'table' => 'yapdd_type',
+        'columns' => array('type' => 'type'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+      'yapdd_base' => array(
+        'table' => 'yapdd_base',
+        'columns' => array('id' => 'id'),
+      ),
+    ),
+    'primary key' => array('revision_id'),
+  );
+
+  $schema['yapdd_type'] = array(
+    'description' => 'Stores information about all defined yapdd types.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique yapdd type ID.',
+      ),
+      'name' => array(
+        'description' => 'The machine-readable name of this yapdd type.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this yapdd type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'The weight of this yapdd type in relation to others.',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data related to this yapdd type.',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+  return $schema;
+}

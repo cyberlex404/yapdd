@@ -13,6 +13,18 @@ function yapdd_permission() {
       'title' => t('Administer Yandex PDD config'),
       'description' => t('Administer Yandex PDD config: set PDD Token & domain'),
     ),
+    'administer yapdds' => array(
+      'title' => t('Administer white label entities'),
+      'description' => t('Created and edit all white label entities.'),
+    ),
+    'administer yapdd types' => array(
+      'title' => t('Administer white label entity types'),
+      'description' => t('Create and delete white label entity types and their fields.'),
+    ),
+    'view own yapdds' => array(
+      'title' => t('View own white label entities'),
+      'description' => t('View own white label entities.'),
+    ),
   );
 }
 
@@ -32,4 +44,210 @@ function yapdd_menu() {
   );
   return $items;
 
+}
+
+
+/**
+ * Gets the string to use for the given key.
+ */
+function yapdd_get_string($key) {
+  $static = &drupal_static(__FUNCTION__);
+
+  if (!isset($static)) {
+    $static = variable_get('yapdd_strings', array()) + array(
+        'entity label' => t('White label entity'),
+        'entity plural label' => t('White label entities'),
+        'entity description' => 'While label entities are white, but they can be customized.',
+        'type label' => t('White label type'),
+        'type plural label' => t('White label types'),
+        'type description' => 'Types of white label entities.',
+        'base path' => 'yapdd',
+        'admin menu path' => 'admin/structure/yapdd',
+        'admin menu description' => 'Manage white label types, including fields.',
+        'admin menu path content' => 'admin/content/yapdd',
+      );
+  }
+  return isset($static[$key]) ? $static[$key] : '';
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function yapdd_entity_info() {
+  $return = array(
+    'yapdd' => array(
+      'label' => yapdd_get_string('entity label'),
+      'plural label' => yapdd_get_string('entity plural label'),
+      'description' => yapdd_get_string('entity description'),
+      'entity class' => 'WhileEntity',
+      'controller class' => 'WhileController',
+      'base table' => 'yapdd_base',
+      'revision table' => 'yapdd_revision',
+      'fieldable' => TRUE,
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Full page'),
+          'custom settings' => FALSE,
+        ),
+      ),
+      'entity keys' => array(
+        'id' => 'id',
+        'revision' => 'revision_id',
+        'bundle' => 'type',
+        'label' => 'label',
+      ),
+      'bundles' => array(),
+      'label callback' => 'entity_class_label',
+      'uri callback' => 'entity_class_uri',
+      'access callback' => 'yapdd_access',
+      'module' => 'yapdd',
+      'metadata controller class' => 'WhileMetadataController',
+      // Enable the entity API's admin UI.
+      'admin ui' => array(
+        'path' => yapdd_get_string('base path'),
+        'file' => 'yapdd.pages.inc',
+        'controller class' => 'WhileUIController',
+      ),
+    ),
+  );
+
+  // Add bundle info but bypass entity_load() as we cannot use it here.
+  $types = db_select('yapdd_type', 't')
+    ->fields('t')
+    ->execute()
+    ->fetchAllAssoc('name');
+
+  foreach ($types as $type_name => $info) {
+    $return['yapdd']['bundles'][$type_name] = array(
+      'label' => $info->label,
+      'admin' => array(
+        'path' => yapdd_get_string('admin menu path') . '/manage/%yapdd_type',
+        'real path' => yapdd_get_string('admin menu path') . '/manage/' . $type_name,
+        'bundle argument' => 4,
+        'access arguments' => array('administer yapdd types'),
+      ),
+    );
+  }
+
+  // Support entity cache module.
+  if (module_exists('entitycache')) {
+    $return['yapdd']['field cache'] = FALSE;
+    $return['yapdd']['entity cache'] = TRUE;
+  }
+
+  $return['yapdd_type'] = array(
+    'label' => yapdd_get_string('type label'),
+    'plural label' => yapdd_get_string('type plural label'),
+    'description' => yapdd_get_string('type description'),
+    'entity class' => 'WhileType',
+    'controller class' => 'EntityAPIControllerExportable',
+    'base table' => 'yapdd_type',
+    'fieldable' => FALSE,
+    'bundle of' => 'yapdd',
+    'exportable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'name' => 'name',
+      'label' => 'label',
+    ),
+    'access callback' => 'yapdd_type_access',
+    'module' => 'yapdd',
+    // Enable the entity API's admin UI.
+    'admin ui' => array(
+      'path' => yapdd_get_string('admin menu path'),
+      'file' => 'yapdd.admin.inc',
+      'controller class' => 'yapddTypeUIController',
+    ),
+  );
+  // Define how to get the bundle-name from a yapdd type object.
+  $return['yapdd']['bundle keys']['bundle'] = 'name';
+
+  return $return;
+}
+
+/**
+ * Access callback for the entity API.
+ */
+function yapdd_access($op, $entity = NULL, $account = NULL) {
+  if (user_access('administer yapdds', $account)) {
+    return TRUE;
+  }
+  $account = isset($account) ? $account : $GLOBALS['user'];
+
+  // @todo: Make owner a field?
+  if (isset($entity) && user_access('view own yapdds', $account)) {
+    if ($entity->uid == $account->uid) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Access callback for the entity API.
+ */
+function yapdd_type_access($op, $entity = NULL, $account = NULL) {
+  return user_access('administer yapdd types', $account);
+}
+
+/**
+ * yapdd type loader.
+ *
+ * @return yapddType
+ */
+function yapdd_type_load($type_name) {
+  return entity_load_single('yapdd_type', $type_name);
+}
+
+/**
+ * yapdd loader.
+ *
+ * @return yapdd
+ */
+function yapdd_load($id) {
+  return entity_load_single('yapdd', $id);
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function yapdd_views_api() {
+  return array("api" => "3.0");
+}
+
+/**
+ * Implements hook_ctools_plugin_directory()
+ */
+function yapdd_ctools_plugin_directory($module, $plugin) {
+  if (in_array($module, array('panelizer', 'ctools', 'page_manager'))) {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function yapdd_ctools_plugin_api($module, $api) {
+  if (($module == 'page_manager' && $api == 'pages_default') || $module == 'panelizer') {
+    return array(
+      'version' => 1,
+      'path' => drupal_get_path('module', 'panelizer') . '/includes',
+    );
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function yapdd_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link to add yapdds on the admin menu content page.
+  if ($root_path == yapdd_get_string('admin menu path content')) {
+    $item = menu_get_item(yapdd_get_string('base path') . '/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
 }

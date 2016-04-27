@@ -2,5 +2,15 @@ name = Yandex mail for domain (Yandex.PDD)
 description = Yandex mail for domain (Yandex.PDD)
 core = 7.x
 
-files[] = yapdd.api.inc
+dependencies[] = entity
+dependencies[] = views
+
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:1
+features[views_view][] = whiles
 files[] = yapdd.admin.inc
+files[] = yapdd.entity.inc
+files[] = yapdd.info.inc
+files[] = yapdd.pages.inc
+
+files[] = yapdd.api.inc
