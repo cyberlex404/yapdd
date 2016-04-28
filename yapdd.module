@@ -4,6 +4,18 @@
 * A description of what your module does.
 */
 
+define("YAPDD_API" , 'https://pddimp.yandex.ru/api2/admin/');
+
+
+class YaDomain {
+
+  function YaDomain($domain){
+
+  }
+
+
+}
+
 /**
  * Implements hook_permission().
  */
@@ -20,6 +32,10 @@ function yapdd_permission() {
     'administer yapdd types' => array(
       'title' => t('Administer white label entity types'),
       'description' => t('Create and delete white label entity types and their fields.'),
+    ),
+    'administer yapdd domains' => array(
+      'title' => t('Administer domains'),
+      'description' => t('Administer domains'),
     ),
     'view own yapdds' => array(
       'title' => t('View own white label entities'),
@@ -42,6 +58,27 @@ function yapdd_menu() {
     'access arguments' => array('administer yandex pdd config'),
     'file' => 'yapdd.admin.inc',
   );
+
+  $items['admin/structure/yapdd/manage/%yapdd_domain/check'] = array(
+    'title' => 'Check',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('yapdd_domain_check_form', 4),
+    'access arguments' => array('administer yapdd domains'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+    //'file' => 'taxonomy.admin.inc',
+  );
+/*
+  $items['admin/structure/yapdd/manage/%/check'] = array(
+    'title' => 'Check 1',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('yapdd_domain_check_form', 4),
+    'access arguments' => array('administer yapdd domains'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+    //'file' => 'taxonomy.admin.inc',
+  );
+*/
   return $items;
 
 }
@@ -152,6 +189,14 @@ function yapdd_entity_info() {
       'label' => 'label',
       'domain' => 'domain',
       'token' => 'token',
+      'delegated' => 'delegated',
+      'country' => 'country',
+      'imap_enabled' => 'imap_enabled',
+      'pop_enabled' => 'pop_enabled',
+      'default_theme' => 'default_theme',
+      'check_results' => 'check_results',
+      'next_check' => 'check_results',
+      'last_check' => 'check_results',
     ),
     'access callback' => 'yapdd_domain_access',
     'module' => 'yapdd',
@@ -253,4 +298,197 @@ function yapdd_menu_local_tasks_alter(&$data, $router_item, $root_path) {
       );
     }
   }
+}
+
+function yapdd_domain_check_form($form, &$form_state, $yapdd_domain) {
+  $form = array();
+  dpm($yapdd_domain);
+
+
+  if (!isset($form_state['domain'])) {
+    $domain = is_object($yapdd_domain) ? $yapdd_domain : (object) $yapdd_domain;
+    $defaults = array(
+      'name' => '',
+      'machine_name' => '',
+      'description' => '',
+      'hierarchy' => 0,
+      'weight' => 0, // TODO поправить
+    );
+    foreach ($defaults as $key => $value) {
+      if (!isset($domain->$key)) {
+        $domain->$key = $value;
+      }
+    }
+    $form_state['domain'] = $domain;
+  }
+  else {
+    $domain = $form_state['domain'];
+  }
+
+
+  $form['domain_name'] = array('#type' => 'hidden', '#value' => $domain->name);
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['check_status'] = array(
+    '#type' => 'submit',
+    '#name' => 'check_status',
+    '#value' => t('Check status'),
+    '#submit' => array('yapdd_domain_check_form_submit_check'),
+  );
+  $form['actions']['emails_list'] = array(
+    '#type' => 'submit',
+    '#name' => 'emails_list',
+    '#value' => t('Emails list'),
+    '#submit' => array('yapdd_domain_check_form_submit'),
+  );
+  return $form;
+
+}
+
+function yapdd_domain_check_form_submit($form, &$form_state) {
+  //dpm($form_state);
+
+  $list = yapdd_domain_email_list($form_state['domain']);
+  dpm($list);
+}
+
+function yapdd_domain_check_form_submit_check($form, &$form_state) {
+  $domain = $form_state['domain'];
+  $domain->domainDetails();
+}
+
+
+/***
+ *
+ * Yandex.PDD API functions
+ */
+
+
+function yapdd_domain_status() {
+  $conf = variable_get('yapdd');
+  // https://pddimp.yandex.ru/api2/admin/domain/registration_status
+  $url = 'https://pddimp.yandex.ru/api2/admin/domain/registration_status?';
+
+  $data_arr = array(
+      'domain' => $conf['domain'],
+  );
+  $host = $url . drupal_http_build_query($data_arr);
+  dpm($host);
+
+  $result = drupal_http_request($host, array(
+      'headers' => array(
+          'PddToken' => $conf['token'],
+          'Content-Type' => 'application/x-www-form-urlencoded',
+      ),
+      'method' => 'GET',
+    //'data' => drupal_http_build_query($data_arr),
+  ));
+  $data = drupal_json_decode($result->data);
+  dpm($data, 'status');
+
+  if(isset($data['error']) || $data['success'] == 'error') {
+    // housadd_set_error($data['error']);
+  }
+  return $data;
+}
+
+
+function yapdd_email_add($login, $pass = NULL) {
+  // https://pddimp.yandex.ru/api2/admin/email/add
+  $op = 'email/add';
+  $method = 'POST';
+
+  $conf = variable_get('yapdd', NULL);
+  if(is_null($pass)) {
+    $pass = user_password();
+  }
+  $data_arr = array(
+      'domain' => $conf['domain'],
+      'login' => $login,
+      'password' => $pass,
+  );
+
+  $result = drupal_http_request(YAPDD_API . $op, array(
+      'headers' => array(
+          'PddToken' => $conf['token'],
+          'Content-Type' => 'application/x-www-form-urlencoded',
+      ),
+      'method' => $method,
+      'data' => drupal_http_build_query($data_arr),
+  ));
+  $data = drupal_json_decode($result->data);
+  dpm($data, 'add mail');
+
+  if(isset($data['success']) &&  $data['success'] == 'ok') {
+    drupal_set_message('Почтовый ящик ' . $data['login'] . 'создан.  Пароль: ' .$pass );
+  }
+  if(isset($data['error']) || $data['success'] == 'error') {
+    //housadd_set_error($data['error']);
+  }
+  return $data;
+}
+
+// GET /api2/admin/email/list
+
+function yapdd_domain_email_list($domain) {
+  //dpm($domain);
+  $first = yapdd_domain_email_get_page($domain);
+
+  if(isset($first)) {
+    $total = $first['total'];
+
+    $accounts = $first['accounts'];
+    $load = count($accounts);
+
+    $i = 2;
+    while ($load < $total) {
+      $package = yapdd_domain_email_get_page($domain, $i);
+      //dpm($package);
+      $i++;
+      if($package) {
+        $load = $load + count($package['accounts']);
+        $accounts = array_merge($accounts, $package['accounts']);
+        //dpm($accounts, 'after +');
+      }
+    }
+    return $accounts;
+  }
+  return $first;
+}
+
+function yapdd_domain_email_get_page($domain, $page = 1) {
+  $on_page = 30;
+  $op = 'email/list?';
+
+  $data_arr = array(
+      'domain' => $domain->domain,
+      'page' => $page,
+      'on_page' => $on_page,
+  );
+  $host = YAPDD_API. $op . drupal_http_build_query($data_arr);
+  //dpm($host);
+
+  $result = drupal_http_request($host, array(
+      'headers' => array(
+          'PddToken' => $domain->token,
+          'Content-Type' => 'application/x-www-form-urlencoded',
+      ),
+      'method' => 'GET',
+    //'data' => drupal_http_build_query($data_arr),
+  ));
+  $data = drupal_json_decode($result->data);
+ // dpm($data, 'status');
+
+  if(isset($data['error']) || $data['success'] == 'error') {
+    // housadd_set_error($data['error']);
+    return FALSE;
+  }
+  return $data;
+}
+
+/*
+ * See https://tech.yandex.ru/pdd/doc/reference/domain-details-docpage/
+ */
+function yapdd_api_domain_details($domain) {
+ // $domain->domainDetails();
+
 }

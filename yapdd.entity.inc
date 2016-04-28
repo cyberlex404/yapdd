@@ -92,6 +92,7 @@ class YapddDomain extends Entity {
   public $domain = '';
   public $token = '';
   public $weight = 0;
+  public $api_url = 'https://pddimp.yandex.ru/api2/admin/';
 
   /**
    * Helper method to check if the yapdd type supports revisions.
@@ -101,6 +102,33 @@ class YapddDomain extends Entity {
    */
   public function supportsRevisions() {
     return !empty($this->data['supports_revisions']);
+  }
+
+  public function domainDetails() {
+    $op = 'domain/details?';
+    $url = $this->api_url . $op;
+
+    $data_arr = array(
+      'domain' => $this->domain,
+    );
+    $host = $url . drupal_http_build_query($data_arr);
+    dpm($host);
+
+    $result = drupal_http_request($host, array(
+      'headers' => array(
+        'PddToken' => $this->token,
+        'Content-Type' => 'application/x-www-form-urlencoded',
+      ),
+      'method' => 'GET',
+      //'data' => drupal_http_build_query($data_arr),
+    ));
+    $data = drupal_json_decode($result->data);
+    dpm($data, 'status');
+
+    if(isset($data['error']) || $data['success'] == 'error') {
+      // housadd_set_error($data['error']);
+    }
+    return $data;
   }
 
 }

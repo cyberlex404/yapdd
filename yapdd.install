@@ -179,6 +179,18 @@ function yapdd_schema() {
     'primary key' => array('revision_id'),
   );
 // yapdd_type - yapdd_domain
+
+  /*
+   *
+   *       'delegated' => 'delegated',
+      'country' => 'country',
+      'imap_enabled' => 'imap_enabled',
+      'pop_enabled' => 'pop_enabled',
+      'default_theme' => 'default_theme',
+      'check_results' => 'check_results',
+      'next_check' => 'check_results',
+      'last_check' => 'check_results',
+   */
   $schema['yapdd_domain'] = array(
     'description' => 'Stores information about all defined yapdd types.',
     'fields' => array(
@@ -236,6 +248,53 @@ function yapdd_schema() {
         'default' => 0x01,
         'size' => 'tiny',
         'description' => 'The exportable status of the entity.',
+      ),
+      'delegated' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Статус делегирования домена на серверы Яндекса',
+      ),
+      'imap_enabled' => array(
+        'description' => 'Boolean indicating imap enabled',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pop_enabled' => array(
+        'description' => 'Boolean indicating pop enabled',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'country' => array(
+        'description' => 'The country domain.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'check_results' => array(
+        'description' => 'Result the lasf check domain.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'next_check' => array(
+        'description' => 'The Unix timestamp when the next check.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'last_check' => array(
+        'description' => 'The Unix timestamp when the last check.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'default_theme' => array(
+        'description' => 'The default theme domain.',
+        'type' => 'varchar',
+        'length' => 120,
+        'not null' => TRUE,
       ),
       'module' => array(
         'description' => 'The name of the providing module if the entity has been defined in code.',
