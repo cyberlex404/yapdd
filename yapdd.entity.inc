@@ -175,6 +175,7 @@ class YapddDomain extends Entity {
   public $last_check = 0;
   public $check_results = '';
   public $country = '';
+  public $default_theme = '';
   public $imap_enabled = 0;
   public $pop_enabled = 0;
   public $delegated = '';
