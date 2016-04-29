@@ -274,6 +274,12 @@ function yapdd_schema() {
         'length' => 32,
         'not null' => TRUE,
       ),
+      'logo_url' => array(
+        'description' => 'The logo url domain.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
       'check_results' => array(
         'description' => 'Result the lasf check domain.',
         'type' => 'varchar',

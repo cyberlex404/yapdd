@@ -92,7 +92,15 @@ class YapddDomain extends Entity {
   public $domain = '';
   public $token = '';
   public $weight = 0;
-  public $api_url = 'https://pddimp.yandex.ru/api2/admin/';
+  public $next_check = 0;
+  public $last_check = 0;
+  public $check_results = '';
+  public $country = '';
+  public $imap_enabled = 0;
+  public $pop_enabled = 0;
+  public $delegated = '';
+  public $logo_url = '';
+  //public $api_url = 'https://pddimp.yandex.ru/api2/admin/';
 
   /**
    * Helper method to check if the yapdd type supports revisions.
@@ -104,31 +112,144 @@ class YapddDomain extends Entity {
     return !empty($this->data['supports_revisions']);
   }
 
-  public function domainDetails() {
-    $op = 'domain/details?';
-    $url = $this->api_url . $op;
-
-    $data_arr = array(
-      'domain' => $this->domain,
-    );
-    $host = $url . drupal_http_build_query($data_arr);
-    dpm($host);
-
-    $result = drupal_http_request($host, array(
+  private function yapddApiRequest($url, $info = array(), $method = 'POST') {
+    if(empty($info)) {
+      $info['domain'] = $this->domain;
+    }
+    $host = YAPDD_API . $url;
+    $request_conf = array(
       'headers' => array(
         'PddToken' => $this->token,
         'Content-Type' => 'application/x-www-form-urlencoded',
       ),
-      'method' => 'GET',
-      //'data' => drupal_http_build_query($data_arr),
-    ));
+      'method' => $method,
+    );
+
+    if($method == 'GET') {
+      $host = $host . drupal_http_build_query($info);
+    }else {
+      $request_conf['data'] = drupal_http_build_query($info);
+    }
+    // dpm($request_conf, $host);
+    $result = drupal_http_request($host, $request_conf);
     $data = drupal_json_decode($result->data);
-    dpm($data, 'status');
+    dpm($data, 'yapddApiRequest: ' . $method . ':' . $url . drupal_http_build_query($info));
 
     if(isset($data['error']) || $data['success'] == 'error') {
       // housadd_set_error($data['error']);
     }
     return $data;
+
+  }
+
+
+  /*
+   * See https://tech.yandex.ru/pdd/doc/reference/domain-details-docpage/
+   */
+  public function domainDetails() {
+    $method = 'domain/details?';
+
+    $data = $this->yapddApiRequest($method, array(), 'GET');
+    if($data['success'] == 'ok') {
+      $this->imap_enabled = $data['imap_enabled'];
+      $this->pop_enabled = $data['pop_enabled'];
+      $this->country = $data['country'];
+      $this->delegated = $data['delegated'];
+      $this->logo_url = !empty($data['logo_url']) ? $data['logo_url'] : '';
+      $this->save();
+    }
+    dpm($this);
+
+    return $data;
+  }
+
+
+  public function domainStatus() {
+    $method = 'domain/registration_status?';
+    $data = $this->yapddApiRequest($method, array(),'GET');
+    if($data['success'] == 'ok') {
+      $this->last_check = strtotime($data['last_check']);
+      $this->next_check = strtotime($data['next_check']);
+      $this->check_results = $data['check_results'];
+      ///dpm($data,$this->last_check);
+      $this->save();
+      // TODO Добавить domain_status
+    }
+    return $data;
+  }
+
+  public function domainDNSGet() {
+    $method = 'dns/list?';
+    $data = array(
+      'domain' => $this->domain,
+    );
+    $data = $this->yapddApiRequest($method);
+    return $data;
+  }
+
+  // dns/add
+  public function domainDNSAdd($record) {
+    $method = 'dns/add';
+    $info = array(
+      'domain' => $this->domain,
+    );
+    $data = $this->yapddApiRequest($method, $info);
+  }
+
+
+  /**
+   * Работа с email
+   */
+
+  public function emailAdd($login, $pass = NULL) {
+    // POST
+    if(is_null($pass)) {
+      $pass = user_password();
+    }
+    $info = array(
+      'domain' => $this->domain,
+      'login' => $login,
+      'password' => $pass,
+    );
+    $method = 'email/add';
+    return $this->yapddApiRequest($method, $info);
+  }
+
+  public function emailList() {
+    $first = $this->emailListPage();
+
+    if(isset($first)) {
+      $total = $first['total'];
+
+      $accounts = $first['accounts'];
+      $load = count($accounts);
+
+      $i = 2;
+      while ($load < $total) {
+        $package = $this->emailListPage($i);
+        //dpm($package);
+        $i++;
+        if($package) {
+          $load = $load + count($package['accounts']);
+          $accounts = array_merge($accounts, $package['accounts']);
+          //dpm($accounts, 'after +');
+        }
+      }
+      return $accounts;
+    }
+    return $first;
+  }
+
+  private function emailListPage($page = 1) {
+    $on_page = 30;
+    $method = 'email/list?';
+
+    $info = array(
+      'domain' => $this->domain,
+      'page' => $page,
+      'on_page' => $on_page,
+    );
+    return $this->yapddApiRequest($method, $info, 'GET');
   }
 
 }

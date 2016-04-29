@@ -7,14 +7,6 @@
 define("YAPDD_API" , 'https://pddimp.yandex.ru/api2/admin/');
 
 
-class YaDomain {
-
-  function YaDomain($domain){
-
-  }
-
-
-}
 
 /**
  * Implements hook_permission().
@@ -36,6 +28,10 @@ function yapdd_permission() {
     'administer yapdd domains' => array(
       'title' => t('Administer domains'),
       'description' => t('Administer domains'),
+    ),
+    'administer domains dns' => array(
+      'title' => t('Administer domains DNS'),
+      'description' => t('Administer domains DNS'),
     ),
     'view own yapdds' => array(
       'title' => t('View own white label entities'),
@@ -63,11 +59,39 @@ function yapdd_menu() {
     'title' => 'Check',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('yapdd_domain_check_form', 4),
+    'access callback' => 'user_access',
     'access arguments' => array('administer yapdd domains'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
     //'file' => 'taxonomy.admin.inc',
+    // entity_access
   );
+
+  $items['admin/structure/yapdd/manage/%yapdd_domain/overview'] = array(
+    'title' => 'Overview',
+    //'title arguments' => array(4),
+    // The page callback also invokes drupal_set_title() in case
+    // the menu router's title is overridden by a menu link.
+    'page callback' => 'yapdd_domain_view',
+    'page arguments' => array(4),
+    //'access callback' => 'node_access',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer yapdd domains'),
+    'type' => MENU_LOCAL_TASK,
+    //'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/structure/yapdd/manage/%entity_object/dns'] = array(
+    'title' => 'DNS',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('yapdd_domain_dns_form', 4),
+    'description' => 'DNS Manage' . '.',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer domains dns'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'yapdd.admin.inc',
+
+  );
+
 /*
   $items['admin/structure/yapdd/manage/%/check'] = array(
     'title' => 'Check 1',
@@ -83,6 +107,12 @@ function yapdd_menu() {
 
 }
 
+/**
+ * Implements hook_menu_alter().
+ */
+function yapdd_menu_alter(&$items) {
+  //dpm($items);
+}
 
 /**
  * Gets the string to use for the given key.
@@ -92,15 +122,15 @@ function yapdd_get_string($key) {
 
   if (!isset($static)) {
     $static = variable_get('yapdd_strings', array()) + array(
-        'entity label' => t('Yandex PDD label email'),
-        'entity plural label' => t('Yandex PDD label emails'),
+        'entity label' => t('Yandex PDD email'),
+        'entity plural label' => t('Yandex PDD emails'),
         'entity description' => 'Yandex PDD label emails are yapdd, but they can be customized.',
         'type label' => t('Yandex PDD domains'),
-        'type plural label' => t('Yandex PDD label domains'),
+        'type plural label' => t('Yandex PDD domains'),
         'type description' => 'Domains Yandex PDD',
         'base path' => 'yapdd',
         'admin menu path' => 'admin/structure/yapdd',
-        'admin menu description' => 'Manage yapdd label types, including fields.',
+        'admin menu description' => 'Manage Yandex.PDD domains, including fields.',
         'admin menu path content' => 'admin/content/yapdd',
       );
   }
@@ -197,6 +227,7 @@ function yapdd_entity_info() {
       'check_results' => 'check_results',
       'next_check' => 'check_results',
       'last_check' => 'check_results',
+      'logo_url' => 'logo_url',
     ),
     'access callback' => 'yapdd_domain_access',
     'module' => 'yapdd',
@@ -256,6 +287,10 @@ function yapdd_load($id) {
   return entity_load_single('yapdd', $id);
 }
 
+function yapdd_domain_title($domain) {
+  return $domain->label;
+}
+
 /**
  * Implements hook_views_api().
  */
@@ -302,7 +337,7 @@ function yapdd_menu_local_tasks_alter(&$data, $router_item, $root_path) {
 
 function yapdd_domain_check_form($form, &$form_state, $yapdd_domain) {
   $form = array();
-  dpm($yapdd_domain);
+  //dpm($yapdd_domain);
 
 
   if (!isset($form_state['domain'])) {
@@ -345,17 +380,22 @@ function yapdd_domain_check_form($form, &$form_state, $yapdd_domain) {
 }
 
 function yapdd_domain_check_form_submit($form, &$form_state) {
-  //dpm($form_state);
-
-  $list = yapdd_domain_email_list($form_state['domain']);
+  $domain = $form_state['domain'];
+  $list = $domain->emailList();
   dpm($list);
 }
 
 function yapdd_domain_check_form_submit_check($form, &$form_state) {
   $domain = $form_state['domain'];
   $domain->domainDetails();
+  $domain->domainStatus();
 }
 
+
+function yapdd_domain_view($domain) {
+  dpm($domain);
+  return $domain->domain;
+}
 
 /***
  *
@@ -430,65 +470,5 @@ function yapdd_email_add($login, $pass = NULL) {
 // GET /api2/admin/email/list
 
 function yapdd_domain_email_list($domain) {
-  //dpm($domain);
-  $first = yapdd_domain_email_get_page($domain);
-
-  if(isset($first)) {
-    $total = $first['total'];
-
-    $accounts = $first['accounts'];
-    $load = count($accounts);
-
-    $i = 2;
-    while ($load < $total) {
-      $package = yapdd_domain_email_get_page($domain, $i);
-      //dpm($package);
-      $i++;
-      if($package) {
-        $load = $load + count($package['accounts']);
-        $accounts = array_merge($accounts, $package['accounts']);
-        //dpm($accounts, 'after +');
-      }
-    }
-    return $accounts;
-  }
-  return $first;
-}
-
-function yapdd_domain_email_get_page($domain, $page = 1) {
-  $on_page = 30;
-  $op = 'email/list?';
-
-  $data_arr = array(
-      'domain' => $domain->domain,
-      'page' => $page,
-      'on_page' => $on_page,
-  );
-  $host = YAPDD_API. $op . drupal_http_build_query($data_arr);
-  //dpm($host);
-
-  $result = drupal_http_request($host, array(
-      'headers' => array(
-          'PddToken' => $domain->token,
-          'Content-Type' => 'application/x-www-form-urlencoded',
-      ),
-      'method' => 'GET',
-    //'data' => drupal_http_build_query($data_arr),
-  ));
-  $data = drupal_json_decode($result->data);
- // dpm($data, 'status');
-
-  if(isset($data['error']) || $data['success'] == 'error') {
-    // housadd_set_error($data['error']);
-    return FALSE;
-  }
-  return $data;
-}
-
-/*
- * See https://tech.yandex.ru/pdd/doc/reference/domain-details-docpage/
- */
-function yapdd_api_domain_details($domain) {
- // $domain->domainDetails();
-
+  return $domain->emailList();
 }

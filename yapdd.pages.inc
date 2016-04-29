@@ -15,8 +15,8 @@ class YapddUIController extends EntityBundleableUIController {
    */
   public function hook_menu() {
     $items = parent::hook_menu();
-
     // Extend the 'add' path.
+    dpm($this->path, 'YapddUIController');
     $items[$this->path . '/add']['title'] = 'Add ' . yapdd_get_string('entity label');
     return $items;
   }
