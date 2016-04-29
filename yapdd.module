@@ -37,6 +37,10 @@ function yapdd_permission() {
       'title' => t('View own white label entities'),
       'description' => t('View own white label entities.'),
     ),
+    'yapdd use oauth login' => array(
+      'title' => t('Use OAuth login'),
+      'description' => t('Use OAuth login for domain.'),
+    ),
   );
 }
 
@@ -89,6 +93,19 @@ function yapdd_menu() {
     'access arguments' => array('administer domains dns'),
     'type' => MENU_LOCAL_TASK,
     'file' => 'yapdd.admin.inc',
+
+  );
+
+  $items['yapdd/%entity_object/login'] = array(
+    'title' => 'Login',
+    'page callback' => 'yapdd_email_login',
+    'page arguments' => array(1),
+    'description' => 'Log in this mail',
+    'access callback' => 'user_access',
+    'access arguments' => array('yapdd use oauth login'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 100,
+    //'file' => 'yapdd.admin.inc',
 
   );
 
@@ -471,4 +488,11 @@ function yapdd_email_add($login, $pass = NULL) {
 
 function yapdd_domain_email_list($domain) {
   return $domain->emailList();
+}
+
+function yapdd_email_login($email) {
+  dpm($email);
+  $email->Oauth();
+ // dpm($email->domain(),'domain');
+  return '0';
 }
