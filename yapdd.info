@@ -4,6 +4,8 @@ core = 7.x
 
 dependencies[] = entity
 dependencies[] = views
+dependencies[] = devel
+;fix devel error
 
 features[ctools][] = views:views_default:3.0
 features[features_api][] = api:1
