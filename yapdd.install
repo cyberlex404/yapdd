@@ -301,6 +301,7 @@ function yapdd_schema() {
         'type' => 'varchar',
         'length' => 120,
         'not null' => TRUE,
+        'default' => '',
       ),
       'module' => array(
         'description' => 'The name of the providing module if the entity has been defined in code.',
