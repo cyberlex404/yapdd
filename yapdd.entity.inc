@@ -34,7 +34,15 @@ class YapddEntity extends Entity {
   public $type;
   public $label = '';
   public $login = '';
+  public $muid = 0;
   public $status = 1;
+  public $iname = '';
+  public $fname = '';
+  public $birth_date = 0;
+  public $sex = 0;
+  public $hintq = '';
+  public $hinta = '';
+  public $enabled = 0;
 
   public function __construct($values = array()) {
     // Support creation with the type object also.
@@ -105,59 +113,16 @@ class YapddEntity extends Entity {
 
   public function Oauth() {
     $token = $this->getOauthToken();
-    $host = 'https://passport.yandex.ru/passport?';
     if($token) {
       $info = array(
         'mode' => 'oauth',
         'access_token' => $token,
         'type' => 'trusted-pdd-partner',
       );
-      $host = $host . drupal_http_build_query($info);
-      $request_conf = array(
-        'headers' => array(
-          'Content-Type' => 'application/x-www-form-urlencoded',
-        ),
-        'method' => 'GET',
-      );
+      $host = 'https://passport.yandex.ru/passport?' . drupal_http_build_query($info);
       drupal_goto($host);
-
-      //$result = drupal_http_request($host, $request_conf);
-      //$data = drupal_json_decode($result->data);
-      //dpm($data);
     }
   }
-
-
-  public function yapddApiRequest($url, $info = array(), $method = 'POST') {
-    if(empty($info)) {
-      $info['domain'] = $this->domain;
-    }
-    $host = YAPDD_API . $url;
-    $request_conf = array(
-      'headers' => array(
-        'PddToken' => $this->token,
-        'Content-Type' => 'application/x-www-form-urlencoded',
-      ),
-      'method' => $method,
-    );
-
-    if($method == 'GET') {
-      $host = $host . drupal_http_build_query($info);
-    }else {
-      $request_conf['data'] = drupal_http_build_query($info);
-    }
-    // dpm($request_conf, $host);
-    $result = drupal_http_request($host, $request_conf);
-    $data = drupal_json_decode($result->data);
-    dpm($data, 'yapddApiRequest: ' . $method . ':' . $url . drupal_http_build_query($info));
-
-    if(isset($data['error']) || $data['success'] == 'error') {
-      // housadd_set_error($data['error']);
-    }
-    return $data;
-
-  }
-
 
 }
 
@@ -216,7 +181,7 @@ class YapddDomain extends Entity {
     dpm($data, 'yapddApiRequest: ' . $method . ':' . $url . drupal_http_build_query($info));
 
     if(isset($data['error']) || $data['success'] == 'error') {
-      // housadd_set_error($data['error']);
+      yapdd_set_error($data['error']);
     }
     return $data;
 

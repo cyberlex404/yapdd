@@ -166,7 +166,7 @@ function yapdd_entity_info() {
       'entity class' => 'YapddEntity',
       'controller class' => 'YapddController',
       'base table' => 'yapdd_email',
-      'revision table' => 'yapdd_revision',
+      //'revision table' => 'yapdd_revision',
       'fieldable' => TRUE,
       'view modes' => array(
         'full' => array(
@@ -176,7 +176,7 @@ function yapdd_entity_info() {
       ),
       'entity keys' => array(
         'id' => 'id',
-        'revision' => 'revision_id',
+        //'revision' => 'revision_id',
         'bundle' => 'type',
         'label' => 'label',
         'login' => 'login',
@@ -392,6 +392,12 @@ function yapdd_domain_check_form($form, &$form_state, $yapdd_domain) {
     '#value' => t('Emails list'),
     '#submit' => array('yapdd_domain_check_form_submit'),
   );
+  $form['actions']['emails_sync'] = array(
+    '#type' => 'submit',
+    '#name' => 'emails_sync',
+    '#value' => t('Emails sync'),
+    '#submit' => array('yapdd_emails_list_sync_submit'),
+  );
   return $form;
 
 }
@@ -406,6 +412,7 @@ function yapdd_domain_check_form_submit_check($form, &$form_state) {
   $domain = $form_state['domain'];
   $domain->domainDetails();
   $domain->domainStatus();
+
 }
 
 
@@ -495,4 +502,149 @@ function yapdd_email_login($email) {
   $email->Oauth();
  // dpm($email->domain(),'domain');
   return '0';
+}
+
+function yapdd_set_error($code) {
+  switch($code) {
+    case 'unknown': $message = 'Произошел временный сбой или ошибка работы API (повторите запрос позже)'; break;
+    case 'no_token': $message = 'Не передан обязательный параметр (no_token)'; break;
+    case 'no_domain': $message = 'Не передан обязательный параметр (no_domain)'; break;
+    case 'no_ip': $message = 'Не передан обязательный параметр (no_ip)'; break;
+    case 'bad_domain': $message = 'Имя домена не указано или не соответствует RFC'; break;
+    case 'prohibited ': $message = 'Запрещенное имя домена'; break;
+    case 'bad_token': $message = 'передан неверный ПДД-токен (логин, пароль)'; break;
+    case 'bad_login': $message = 'передан неверный ПДД-токен (логин, пароль)'; break;
+    case 'bad_passwd': $message = 'Передан неверный ПДД-токен (логин, пароль)'; break;
+    case 'no_auth': $message = 'Не передан заголовок PddToken'; break;
+    case 'not_allowed': $message = 'Пользователю недоступна данная операция (он не является администратором этого домена)'; break;
+    case 'blocked': $message = 'Домен заблокирован (например, за спам и т.п.)'; break;
+    case 'occupied': $message = 'Имя используется другим пользователем'; break;
+    case 'domain_limit_reached': $message = 'Превышено допустимое количество подключенных доменов (50)'; break;
+    case 'no_reply': $message = 'Яндекс.Почта для домена не может установить соединение с сервером-источником для импорта'; break;
+    default : $message = 'Неизвестный код ошибки';
+  }
+  drupal_set_message($message, 'error');
+}
+
+
+function yapdd_emails_list_sync_submit($form, &$form_state) {
+  $function = 'yapdd_emails_list_sync_batch';
+  $_SESSION['http_request_count'] = 0;
+//  dpm($form_state);
+  $test = 'test';
+  $batch = $function($form_state['domain']);
+  batch_set($batch);
+}
+
+function yapdd_emails_list_sync_batch($domain) {
+  $emails = $domain->emailList();
+//dpm($domain);
+ // $nid = batch_example_lowest_nid();
+  $num_operations = count($emails);
+  drupal_set_message(t('Creating an array of @num operations', array('@num' => $num_operations)));
+  $operations = array();
+
+  foreach ($emails as $key => $email) {
+    $operations[] = array(
+      'yapdd_emails_list_sync_op',
+      array(
+        $email,
+        $domain,
+        t('(Operation @operation)', array('@operation' => $key)),
+      ),
+    );
+  }
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'yapdd_emails_list_sync_finished',
+  );
+  return $batch;
+}
+
+/**
+ * Batch operation for batch 1: load a node.
+ *
+ * This is the function that is called on each operation in batch 1.
+ */
+function yapdd_emails_list_sync_op($email, $domain, $operation_details, &$context) {
+  preg_match('/^(.*)@(.*)$/',$email['login'],$items);
+  $login = $items[1];
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'yapdd')
+    ->propertyCondition('type', $domain->name)
+    ->propertyCondition('login', $login);
+  $result = $query->execute();
+  if (isset($result['yapdd'])) {
+    $emails_ids = array_keys($result['yapdd']);
+    $emails = entity_load_single('yapdd', $emails_ids[0]);
+    dpm($emails,'find');
+  }else{
+    dpm($result, 'not found');
+    $new_e = entity_create('yapdd', array('type' => $domain->name));
+// Specify the author.
+    $new_e->uid = 1;
+    $new_e->login = $login;
+    $new_e->label = $email['login'];
+    $new_e->save();
+    dpm($new_e);
+// Create a Entity Wrapper of that new Entity.
+  //  $new_email = entity_metadata_wrapper('yapdd', $new_e);
+// Set a title and some text field value.
+  //  $new_email->label = $email['login'];
+  //  $new_email->login = $login;
+// And save it.
+  //  $new_email->save();
+  }
+
+
+  $context['results'][] = $email['login'] . ' : ' . check_plain($login);
+
+  // Optional message displayed under the progressbar.
+  $context['message'] = t('Loading email "@login"', array('@login' => $email['login'])) . $login .' ' . $operation_details;
+
+  _yapdd_emails_list_sync_update_http_requests();
+}
+
+/**
+ * Batch 'finished' callback used by both batch.
+ */
+function yapdd_emails_list_sync_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we could do something meaningful with the results.
+    // We just display the number of nodes we processed...
+    drupal_set_message(t('@count results processed in @requests HTTP requests.', array('@count' => count($results), '@requests' => _yapdd_emails_list_sync_get_http_requests())));
+    drupal_set_message(t('The final result was "%final"', array('%final' => end($results))));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    drupal_set_message(
+      t('An error occurred while processing @operation with arguments : @args',
+        array(
+          '@operation' => $error_operation[0],
+          '@args' => print_r($error_operation[0], TRUE),
+        )
+      ),
+      'error'
+    );
+  }
+}
+
+
+/**
+ * Utility function to increment HTTP requests in a session variable.
+ */
+function _yapdd_emails_list_sync_update_http_requests() {
+  $_SESSION['http_request_count']++;
+}
+
+/**
+ * Utility function to count the HTTP requests in a session variable.
+ *
+ * @return int
+ *   Number of requests.
+ */
+function _yapdd_emails_list_sync_get_http_requests() {
+  return !empty($_SESSION['http_request_count']) ? $_SESSION['http_request_count'] : 0;
 }

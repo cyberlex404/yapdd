@@ -76,6 +76,7 @@ function yapdd_form($form, &$form_state, Entity $yapdd, $op = 'edit') {
   );
 */
   $form['options']['#tree'] = TRUE;
+  /*
   if ($yapdd->type()->data['supports_revisions'] && empty($yapdd->is_new)) {
     $form['options']['create_revision'] = array('#type' => 'checkbox',
       '#title' => t('Create a new revision'),
@@ -83,7 +84,7 @@ function yapdd_form($form, &$form_state, Entity $yapdd, $op = 'edit') {
       '#description' => t('Create a new revision for this edit.'),
     );
   }
-
+*/
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
